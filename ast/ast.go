@@ -2,6 +2,9 @@ package ast
 
 import "monkey/token"
 
+// difference between expression and statement: an expression produces a value, a statement does not
+// e.g. 5 + 5 is an expression, let x = 5 is a statement
+
 type Node interface {
 	TokenLiteral() string // returns the literal value of the token (used only for debugging and testing)
 }
@@ -46,3 +49,11 @@ type Identifier struct {
 
 func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
+
+type ReturnStatement struct {
+	Token       token.Token // the token.RETURN token
+	ReturnValue Expression  // the expression that the return value should be bound to
+}
+
+func (rs *ReturnStatement) statementNode()       {}
+func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
