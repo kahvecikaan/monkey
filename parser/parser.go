@@ -5,14 +5,25 @@ import (
 	"monkey/ast"
 	"monkey/lexer"
 	"monkey/token"
+	"strconv"
 )
 
 type Parser struct {
-	l         *lexer.Lexer
-	errors    []string
-	currToken token.Token
-	peekToken token.Token
+	l              *lexer.Lexer
+	errors         []string
+	currToken      token.Token
+	peekToken      token.Token
+	prefixParseFns map[token.TokenType]prefixParseFn // map of functions that can parse a prefix token
+	infixParseFns  map[token.TokenType]infixParseFn  // map of functions that can parse an infix token
 }
+
+// Some example data for prefixParseFns map:
+// prefixParseFns = map[token.TokenType]prefixParseFn{
+// 	token.IDENT: parseIdentifier,
+// 	token.INT: parseIntegerLiteral,
+// 	token.BANG: parsePrefixExpression,
+// 	token.MINUS: parsePrefixExpression,
+// etc.
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l,
@@ -21,6 +32,11 @@ func New(l *lexer.Lexer) *Parser {
 	// Read two tokens, so currToken and peekToken are both set
 	p.nextToken()
 	p.nextToken()
+
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+	p.registerPrefix(token.INT, p.parseIntegerLiteral)
+
 	return p
 }
 
@@ -56,7 +72,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -121,4 +137,68 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	}
 
 	return stmt
+}
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression // it takes the left side of the operator as an argument
+)
+
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.currToken} // create a new ExpressionStatement node and set its token
+	stmt.Expression = p.parseExpression(LOWEST)          // parse the expression
+
+	if p.peekTokenIs(token.SEMICOLON) { // check if the next token is a semicolon
+		p.nextToken() // if it is, advance the tokens
+	}
+
+	return stmt
+}
+
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
+)
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.currToken.Type] // look up the prefixParseFn for the current token type
+	if prefix == nil {                           // if we don't find one, we return nil
+		return nil
+	}
+	leftExp := prefix() // if we do find one, we call it to get the left expression
+
+	return leftExp
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	lit := &ast.IntegerLiteral{Token: p.currToken}
+
+	value, err := strconv.ParseInt(p.currToken.Literal, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as integer", p.currToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+
+	lit.Value = value
+
+	return lit
 }
