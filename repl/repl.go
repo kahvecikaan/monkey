@@ -6,6 +6,7 @@ import (
 	"io"
 	"monkey/lexer"
 	"monkey/parser"
+	"strings"
 )
 
 const PROMPT = ">> "
@@ -30,7 +31,12 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, program.String())
+		// Generate the string representation of the program
+		programStr := program.String()
+		// Post-process the string to fix double semicolons
+		fixedProgramStr := strings.ReplaceAll(programStr, ";;", ";")
+
+		io.WriteString(out, fixedProgramStr)
 		io.WriteString(out, "\n")
 	}
 }
