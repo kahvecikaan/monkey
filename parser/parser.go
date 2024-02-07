@@ -211,7 +211,8 @@ func (p *Parser) noPrefixParseFnError(t token.TokenType) {
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := p.prefixParseFns[p.currToken.Type] // look up the prefixParseFn for the current token type
-	if prefix == nil {                           // if we don't find one, we return nil
+	if prefix == nil {
+		p.noPrefixParseFnError(p.currToken.Type)
 		return nil
 	}
 	leftExp := prefix() // if we do find one, we call it to get the left expression
