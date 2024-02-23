@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"monkey/evaluator"
 	"monkey/lexer"
 	"monkey/parser"
-	"strings"
 )
 
 const PROMPT = ">> "
@@ -31,13 +31,11 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		// Generate the string representation of the program
-		programStr := program.String()
-		// Post-process the string to fix double semicolons
-		fixedProgramStr := strings.ReplaceAll(programStr, ";;", ";")
-
-		io.WriteString(out, fixedProgramStr)
-		io.WriteString(out, "\n")
+		evaluated := evaluator.Eval(program)
+		if evaluated != nil {
+			io.WriteString(out, evaluated.Inspect())
+			io.WriteString(out, "\n")
+		}
 	}
 }
 
