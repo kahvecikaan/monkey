@@ -1,6 +1,9 @@
 package lexer
 
-import "monkey/token"
+import (
+	"monkey/token"
+	"strings"
+)
 
 type Lexer struct {
 	input        string
@@ -99,8 +102,12 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Type = token.LookupIdent(tok.Literal) // check if the identifier is a keyword
 			return tok
 		} else if isDigit(l.ch) {
-			tok.Type = token.INT
 			tok.Literal = l.readNumber() // readNumber() advances l.position and l.readPosition
+			if strings.Contains(tok.Literal, ".") {
+				tok.Type = token.FLOAT
+			} else {
+				tok.Type = token.INT
+			}
 			return tok
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)

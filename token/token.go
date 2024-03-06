@@ -15,6 +15,7 @@ const (
 
 	IDENT = "IDENT" // add, foobar, x, y, ...
 	INT   = "INT"   // 1234524
+	FLOAT = "FLOAT"
 
 	// Operators
 
