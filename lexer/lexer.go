@@ -145,6 +145,12 @@ func (l *Lexer) readNumber() string {
 	for isDigit(l.ch) {    // read until we encounter a non-digit character
 		l.readChar()
 	}
+	if l.ch == '.' {
+		l.readChar()
+		for isDigit(l.ch) {
+			l.readChar()
+		}
+	}
 	return l.input[position:l.position] // return the substring from position to l.position
 }
 
