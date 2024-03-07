@@ -145,7 +145,7 @@ func isDigit(ch byte) bool {
 	return '0' <= ch && ch <= '9'
 }
 
-// Note that we ignore floating point numbers, hexadecimal numbers, and so on. We only support integers for now.
+// We now implement integers and also floating-point numbers
 
 func (l *Lexer) readNumber() string {
 	position := l.position // save the current position in the input string
